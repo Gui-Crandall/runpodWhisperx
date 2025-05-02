@@ -56,9 +56,15 @@ RUN pip install --no-cache-dir --upgrade pip==21.* && \
         torchaudio==2.0.0 \
         -f https://download.pytorch.org/whl/cu118/torch_stable.html
 
+# Removed below to accommodate to our own fork
 # Clone and install WhisperX
-COPY ./whisperx /code
-RUN pip install --no-cache-dir /code
+# COPY ./whisperx /code
+# RUN pip install --no-cache-dir /code
+
+#Added the following to accommodate our own fork
+# Install WhisperX and the diarization library
+RUN pip install --no-cache-dir whisperx
+RUN pip install --no-cache-dir "pyannote.audio>=3.1,<3.2"
 
 # Preload Models
 RUN python -c 'from whisperx.vad import load_vad_model; load_vad_model("cpu");' && \
