@@ -71,6 +71,7 @@ RUN python load_align_model.py ${LANG}
 # Copy and install application-specific requirements
 COPY requirements.txt /app/requirements.txt
 RUN pip install --no-cache-dir -r requirements.txt
+RUN pip install --no-cache-dir pyannote.audio
 
 # COPY the example.mp3 file to the container as a default testing audio file
 COPY example.mp3 /app/example.mp3
