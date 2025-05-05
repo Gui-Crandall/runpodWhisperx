@@ -58,8 +58,8 @@ RUN pip install --no-cache-dir --upgrade pip==21.* && \
 
 # Removed to accommodate to our fork
 #Clone and install WhisperX
-COPY ./whisperx /code
-RUN pip install --no-cache-dir /code
+#COPY ./whisperx /code
+#RUN pip install --no-cache-dir /code
 
 #Added to accommodate to our fork
 #START
