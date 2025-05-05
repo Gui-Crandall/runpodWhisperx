@@ -65,6 +65,8 @@ RUN pip install --no-cache-dir --upgrade pip==21.* && \
 # Install WhisperX and the diarization library
 RUN pip install --no-cache-dir whisperx
 RUN pip install --no-cache-dir "pyannote.audio>=3.1,<3.2"
+# Pin NumPy to <2.0 so PyAnnote's np.NaN still works
+RUN pip install --no-cache-dir "numpy<2.0"
 
 # Preload Models
 RUN python -c 'from whisperx.vad import load_vad_model; load_vad_model("cpu");' && \
