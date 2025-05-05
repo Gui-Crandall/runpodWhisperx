@@ -28,24 +28,21 @@ ENV DEBIAN_FRONTEND=noninteractive
 RUN apt-get update && \
     apt-get upgrade -y && \
     apt-get install -y --no-install-recommends \
-    # Basic Utilities
-    bash ca-certificates curl file git ffmpeg \
-    # Python 3.10 and venv
-    software-properties-common && \
+        bash ca-certificates curl file git ffmpeg \
+        software-properties-common && \
     add-apt-repository ppa:deadsnakes/ppa && \
     apt-get update && \
     apt-get install -y python3.10 python3.10-venv python3.10-distutils && \
     apt-get autoremove -y && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/* && \
-    # Set locale
     echo "en_US.UTF-8 UTF-8" > /etc/locale.gen
 
 # Create and activate virtual environment
 RUN python3.10 -m venv /app/venv
 ENV PATH="/app/venv/bin:$PATH"
 
-# Install Python dependencies, setuptools-rust, PyTorch, and download WhisperX
+# Install Python dependencies, setuptools‑rust, PyTorch, and base tools
 RUN pip install --no-cache-dir --upgrade pip==21.* && \
     pip install \
         setuptools-rust==1.8.0 \
@@ -56,23 +53,19 @@ RUN pip install --no-cache-dir --upgrade pip==21.* && \
         torchaudio==2.0.0 \
         -f https://download.pytorch.org/whl/cu118/torch_stable.html
 
-# Removed to accommodate to our fork
-#Clone and install WhisperX
-#COPY ./whisperx /code
-#RUN pip install --no-cache-dir /code
+# ────────────────────────────────────────────────────────────────
+# WhisperX + diarization stack  (stable “Justin” versions)
+# ────────────────────────────────────────────────────────────────
+# CHANGED: we now install specific pinned versions instead of the
+#          latest GitHub trunk to avoid NumPy‑2 / PyAnnote‑3.3 drift.
+RUN pip install --no-cache-dir "whisperx==3.2.0"          # CHANGED
+RUN pip install --no-cache-dir "pyannote.audio==3.1.1"    # CHANGED
+RUN pip install --no-cache-dir "numpy<2.0"                # CHANGED
 
-#Added to accommodate to our fork
-#START
-RUN pip install --no-cache-dir git+https://github.com/m-bain/whisperX.git@main
+# CHANGED: removed old COPY /code + pip install lines.
+# They expected a vendored submodule that doesn’t exist in this fork.
 
-# Install the diarization library
-RUN pip install --no-cache-dir "pyannote.audio>=3.1,<3.2"
-
-# Pin NumPy below 2.0 for PyAnnote compatibility
-RUN pip install --no-cache-dir "numpy<2.0"
-#END
-
-# Preload Models
+# Preload VAD and Whisper models (optional warm‑up)
 RUN python -c 'from whisperx.vad import load_vad_model; load_vad_model("cpu");' && \
     python -c 'import faster_whisper; model = faster_whisper.WhisperModel("'${WHISPER_MODEL}'")'
 
@@ -83,7 +76,8 @@ RUN python load_align_model.py ${LANG}
 # Copy and install application-specific requirements
 COPY requirements.txt /app/requirements.txt
 RUN pip install --no-cache-dir -r requirements.txt
-RUN pip install --no-cache-dir pyannote.audio
+
+# CHANGED: removed duplicate “pip install pyannote.audio” — already pinned above.
 
 # COPY the example.mp3 file to the container as a default testing audio file
 COPY example.mp3 /app/example.mp3
