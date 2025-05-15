@@ -24,7 +24,6 @@ _align_model    = None
 _align_metadata = None
 _diarizer       = None
 
-
 def _load_whisper():
     global _whisper_model
     if _whisper_model is None:
@@ -33,7 +32,6 @@ def _load_whisper():
         )
     return _whisper_model
 
-
 def _load_align():
     global _align_model, _align_metadata
     if _align_model is None or _align_metadata is None:
@@ -41,10 +39,6 @@ def _load_align():
             language_code=language_code, device=device
         )
     return _align_model, _align_metadata
-
-#Debug to check diarization
-print(f"[server] Diarization flag received: {job_inp.get('diarize', False)}")
-print(f"[server] HF_AUTH_TOKEN exists: {hf_token is not None}")
 
 def _load_diarizer():
     global _diarizer
@@ -59,7 +53,6 @@ def _load_diarizer():
     return _diarizer
 # ------------------------------------------------------------------
 
-
 # ------------------------------------------------------------------
 #  Utility helpers
 # ------------------------------------------------------------------
@@ -72,7 +65,6 @@ def _download_to_temp(url: str) -> str:
     tf.flush()
     return tf.name
 
-
 def _base64_to_temp(b64_str: str) -> str:
     """Decode base64 audio → temporary WAV path."""
     data = base64.b64decode(b64_str)
@@ -81,7 +73,6 @@ def _base64_to_temp(b64_str: str) -> str:
     tf.flush()
     return tf.name
 # ------------------------------------------------------------------
-
 
 def handler(event):
     """
@@ -96,6 +87,9 @@ def handler(event):
     audio_path = None
 
     try:
+        print(f"[server] Diarization flag received: {job_inp.get('diarize', False)}")
+        print(f"[server] HF_AUTH_TOKEN exists: {hf_token is not None}")
+
         # 1️⃣  Get the audio into a temp file ---------------------------------
         if "audio_url" in job_inp:
             audio_path = _download_to_temp(job_inp["audio_url"])
@@ -120,22 +114,13 @@ def handler(event):
         )
 
         # 4️⃣  (Optional) Speaker diarization --------------------------------
-        #Original code
-        #if job_inp.get("diarize", False):
-            #diarizer   = _load_diarizer()
-            #dia_result = diarizer(audio_path)               # runs Pyannote
-            #result     = whisperx.diarize.assign_word_speakers(
-            #    dia_result, result
-            #)
         if job_inp.get("diarize", False):
-    print(f"[server] Diarization flag received: {job_inp.get('diarize', False)}")
-    print(f"[server] HF_AUTH_TOKEN exists: {hf_token is not None}")
-    try:
-        diarizer = _load_diarizer()
-        dia_result = diarizer(audio_path)  # runs Pyannote
-        result = whisperx.diarize.assign_word_speakers(dia_result, result)
-    except Exception as e:
-        print(f"[server] Diarization failed: {e}")
+            try:
+                diarizer = _load_diarizer()
+                dia_result = diarizer(audio_path)  # runs Pyannote
+                result = whisperx.diarize.assign_word_speakers(dia_result, result)
+            except Exception as e:
+                print(f"[server] Diarization failed: {e}")
 
         return result
 
@@ -147,7 +132,6 @@ def handler(event):
         if audio_path and os.path.exists(audio_path):
             os.remove(audio_path)
         gc.collect()
-
 
 # ------------------------------------------------------------------
 #  Start the serverless handler
