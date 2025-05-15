@@ -42,6 +42,9 @@ def _load_align():
         )
     return _align_model, _align_metadata
 
+#Debug to check diarization
+print(f"[server] Diarization flag received: {job_inp.get('diarize', False)}")
+print(f"[server] HF_AUTH_TOKEN exists: {hf_token is not None}")
 
 def _load_diarizer():
     global _diarizer
@@ -117,12 +120,22 @@ def handler(event):
         )
 
         # 4️⃣  (Optional) Speaker diarization --------------------------------
+        #Original code
+        #if job_inp.get("diarize", False):
+            #diarizer   = _load_diarizer()
+            #dia_result = diarizer(audio_path)               # runs Pyannote
+            #result     = whisperx.diarize.assign_word_speakers(
+            #    dia_result, result
+            #)
         if job_inp.get("diarize", False):
-            diarizer   = _load_diarizer()
-            dia_result = diarizer(audio_path)               # runs Pyannote
-            result     = whisperx.diarize.assign_word_speakers(
-                dia_result, result
-            )
+    print(f"[server] Diarization flag received: {job_inp.get('diarize', False)}")
+    print(f"[server] HF_AUTH_TOKEN exists: {hf_token is not None}")
+    try:
+        diarizer = _load_diarizer()
+        dia_result = diarizer(audio_path)  # runs Pyannote
+        result = whisperx.diarize.assign_word_speakers(dia_result, result)
+    except Exception as e:
+        print(f"[server] Diarization failed: {e}")
 
         return result
 
