@@ -47,7 +47,7 @@ RUN pip install --no-cache-dir --upgrade pip==21.* && \
     pip install \
         setuptools-rust==1.8.0 \
         huggingface_hub==0.18.0 \
-        runpod==1.7.7 \
+        runpod~=1.7.7 \
         torch==2.0.0 \
         torchvision==0.15.0 \
         torchaudio==2.0.0 \
